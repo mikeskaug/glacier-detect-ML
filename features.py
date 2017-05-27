@@ -53,9 +53,9 @@ def construct_features():
             train_sub_labels = np.zeros([CONFIG['train_samples_per_region'], CONFIG['num_categories']])
             test_sub_labels = np.zeros([CONFIG['test_samples_per_region'], CONFIG['num_categories']])
 
-            train_set_coords = zip(train_x, train_y)
-            test_set_coords = zip(test_x, test_y)
             for feature_index, band in enumerate(CONFIG['band_postfix']):
+                train_set_coords = zip(train_x, train_y)
+                test_set_coords = zip(test_x, test_y)
                 path = CONFIG['image_directory'] + '/' + key + band
                 with rasterio.open(path) as dataset:
 
