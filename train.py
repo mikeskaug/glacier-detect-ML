@@ -56,6 +56,11 @@ def load_data(directory):
     return (training_set_norm, training_labels, test_set_norm, test_labels)
 
 
+def save_checkpoint(sess, out_dir):
+    saver = tf.train.Saver()
+    saver.save(sess, os.path.join(os.path.abspath(out_dir), 'model.ckpt'))
+
+
 def run_training(unused_argv):
     (training_set, training_labels, test_set, test_labels) = load_data('./output')
     num_features = training_set.shape[1]
@@ -79,6 +84,9 @@ def run_training(unused_argv):
 
         if i % 100 == 0:
             do_eval(sess, logits, data_placeholder, labels_placeholder, test_set, test_labels)
+
+        if i % 1000 == 0:
+            save_checkpoint(sess, './output')
 
 
 if __name__ == "__main__":
