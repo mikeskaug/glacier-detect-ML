@@ -53,7 +53,7 @@ def load_data(directory):
     test_set_shift = test_set - test_set.min(axis=0)
     test_set_norm = test_set_shift / test_set_shift.max(axis=0)
     test_labels = np.load(os.path.join(os.path.abspath(directory), 'test_labels.npy'))
-    return (training_set_norm, training_labels, test_set_norm, test_labels)
+    return (training_set, training_labels, test_set, test_labels)
 
 
 def save_checkpoint(sess, out_dir):
