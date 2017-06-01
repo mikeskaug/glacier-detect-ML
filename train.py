@@ -39,21 +39,20 @@ def train(loss, learning_rate):
 
 def do_eval(sess, logits, data_placeholder, labels_placeholder, test_set, test_labels):
     correct_prediction = tf.equal(tf.argmax(logits, 1), tf.argmax(labels_placeholder, 1))
-    accuracy = tf.reduce_mean(tf.cast(correct_prediction, tf.float32))
-    print(sess.run(accuracy, feed_dict={data_placeholder: test_set, labels_placeholder: test_labels}))
+    accuracy_op = tf.reduce_mean(tf.cast(correct_prediction, tf.float32))
+    accuracy = sess.run(accuracy_op, feed_dict={data_placeholder: test_set, labels_placeholder: test_labels})
+    return accuracy
 
 
 def load_data(directory):
     training_set = np.load(os.path.join(os.path.abspath(directory), 'training_set.npy'))
-    training_set_shift = training_set - training_set.min(axis=0)
-    training_set_norm = training_set_shift / training_set_shift.max(axis=0)
+    training_set_norm = training_set / 255
     training_labels = np.load(os.path.join(os.path.abspath(directory), 'training_labels.npy'))
 
     test_set = np.load(os.path.join(os.path.abspath(directory), 'test_set.npy'))
-    test_set_shift = test_set - test_set.min(axis=0)
-    test_set_norm = test_set_shift / test_set_shift.max(axis=0)
+    test_set_norm = test_set / 255
     test_labels = np.load(os.path.join(os.path.abspath(directory), 'test_labels.npy'))
-    return (training_set, training_labels, test_set, test_labels)
+    return (training_set_norm, training_labels, test_set_norm, test_labels)
 
 
 def save_checkpoint(sess, out_dir):
@@ -66,27 +65,40 @@ def run_training(unused_argv):
     num_features = training_set.shape[1]
     num_categories = training_labels.shape[1]
 
-    data_placeholder, labels_placeholder = placeholders(num_features, num_categories)
+    with tf.Graph().as_default():
+        # construct placeholders for data to feed into graph
+        data_placeholder, labels_placeholder = placeholders(num_features, num_categories)
 
-    # Setup the graph operations
-    logits = logistic_regression_model(data_placeholder, num_features, num_categories)
-    loss_op = loss(labels_placeholder, logits)
-    train_op = train(loss_op, 0.8)
+        # Setup the graph operations
+        logits = logistic_regression_model(data_placeholder, num_features, num_categories)
+        tf.summary.histogram('logits', logits)
+        loss_op = loss(labels_placeholder, logits)
+        tf.summary.scalar('loss', loss_op)
+        train_op = train(loss_op, 0.8)
 
-    # Initialize the Tensor Flow variables and session
-    init = tf.initialize_all_variables()
-    sess = tf.Session()
-    sess.run(init)
+        # Build the summary Tensor that can be visualized in TensorBoard.
+        summary = tf.summary.merge_all()
 
-    for i in range(5000):
-        batch_xs, batch_ys = get_batch(training_set, training_labels, 500)
-        sess.run(train_op, feed_dict={data_placeholder: batch_xs, labels_placeholder: batch_ys})
+        # Initialize the Tensor Flow variables and session
+        init = tf.global_variables_initializer()
+        sess = tf.Session()
 
-        if i % 100 == 0:
-            do_eval(sess, logits, data_placeholder, labels_placeholder, test_set, test_labels)
+        # Create a SummaryWriter to output summaries and the Graph.
+        summary_writer = tf.summary.FileWriter('./output', sess.graph)
 
-        if i % 1000 == 0:
-            save_checkpoint(sess, './output')
+        sess.run(init)
+
+        for i in range(5000):
+            batch_xs, batch_ys = get_batch(training_set, training_labels, 500)
+            sess.run(train_op, feed_dict={data_placeholder: batch_xs, labels_placeholder: batch_ys})
+
+            if i % 1000 == 0:
+                summary_str = sess.run(summary, feed_dict={data_placeholder: batch_xs, labels_placeholder: batch_ys})
+                summary_writer.add_summary(summary_str, i)
+                summary_writer.flush()
+                metric = do_eval(sess, logits, data_placeholder, labels_placeholder, test_set, test_labels)
+                print(metric)
+                save_checkpoint(sess, './output')
 
 
 if __name__ == "__main__":
