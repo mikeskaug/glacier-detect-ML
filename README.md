@@ -2,44 +2,41 @@
 Teaching a computer to identify a glacier in satellite imagery
 
 ### Introduction
-This set of Jupyter notebooks can be used to train a simple linear model to identify a glacier in Landsat satellite imagery. The idea is to assign a set of "features" to each pixel in the image (intensity in each channel, position, etc.) and then train a linear model to categorize each pixel as glacier or something not glacier, like open water, land, clouds, etc.
+This set of python scripts can be used to train a simple logistic regression model to identify a glacier in Landsat satellite imagery. The idea is to assign a set of "features" to each pixel in the image (intensity in each channel, etc.) and then train a linear model to categorize each pixel as glacier or something not glacier, like open water, land, clouds, etc.
 
 The ability to automate detection of glaciers in satellite imagery would help geo scientists who study glacier evolution, movement and interaction with surrounding land and water.
 
 ### Requirements
   * Python 3.5
-  * [Jupyter 4.1.0](http://jupyter.org/)
   * [Tensor Flow](https://www.tensorflow.org/)   
   * [Rasterio](https://github.com/mapbox/rasterio)
   * Numpy
   * Matplotlib
 
 ### Usage
-The Landat imagery is available publicly from Amazon Web Services: [AWS Landsat](https://pages.awscloud.com/public-data-sets-landsat.html)
+Before training, you need to construct the feature and label vectors for training and testing.
 
-The notebooks are meant to be run in the following order:
+      $ (training_set, training_labels, test_set, test_labels) = features.construct_features()
 
-  1. resize_image.ipynb
+The `construct_features()` function uses a `CONFIG` variable to locate the Landsat images, bounding boxes for glacier and non-glacier regions, etc.
 
-  2. construct_features.ipynb
+**TODO**
 
-  3. train_model.ipynb
+1. Provide configuration as an argument to `construct_features()`
+2. Switch to Amazon AWS for sourcing Landsat imagery
 
-  4. process_image.ipynb
+If you would like to save the features for later training:
 
-Comments and explanations are included in the notebooks.
+      $ features.save_features(training_set, training_labels, test_set, test_labels, 'path/to/output')
 
-The notebooks assume that the following four images (each containing 7 spectral bands) have been downloaded locally in `./images/`
+To run the training:
 
-* LE70322482009163EDC00
-* LE70322482009195EDC00
-* LE70332482010173EDC00
-* LE70342482009177EDC00
+      $ python train.py
 
-See the documentation on [AWS](https://pages.awscloud.com/public-data-sets-landsat.html) to parse the image names
+**TODO**
 
-### TODO
+1. refactor `train.py` so that there are no hard-coded paths and values.
 
-1. Use Landsat 8 imagery which is available on AWS and create a script to download and preprocess the images.
+You can visualize training metrics using [TensorBoard](https://www.tensorflow.org/get_started/summaries_and_tensorboard) by running:
 
-2. weight connectedness in the model
+      $ tensorboard --logdir=path/to/logs
